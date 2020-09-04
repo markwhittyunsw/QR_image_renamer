@@ -1,5 +1,5 @@
 # QR_image_renamer
-Code to rename a folder of images according to the content of a QR code in each image
+Code to rename a folder of images according to the content of a QR code in each image. 
 This works together with a bulk QR code generator program: https://github.com/markwhittyunsw/GenerateQRCode
 - Author: Mark Whitty UNSW
 - m.whitty@unsw.edu.au
