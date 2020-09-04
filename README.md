@@ -25,7 +25,8 @@ HINT: Use Terminal in PyCharm to run commands for installing packages using pip 
  - pip install numpy
  - pip install opencv-contrib-python
  - run barcode-QRcodeScannerPy.py to install OpenCV (cv2)
- - pip install pyinstaller
+ - pip install pyinstaller [Only needed to generate an exe]
+ - python barcode-QRcodeScannerPy_v14
 
 ## Using pyinstaller to generate an exe
 https://medium.com/dreamcatcher-its-blog/making-an-stand-alone-executable-from-a-python-script-using-pyinstaller-d1df9170e263
