@@ -12,7 +12,7 @@ This works together with a bulk QR code generator program: https://github.com/ma
   - A Double-click the .exe and select the folder containing images to be renamed from the window that pops up. Then select the folder where you want the renamed images to be saved (original images are not altered) OR
   - B In Windows, drag the folder containing images to be renamed onto the .exe and the renamed images will be placed in a subfolder OR
   - C Open a command prompt (In Windows, press the Windows key, type 'cmd', press enter, then dir to the location of the exe), type "barcode-QRcodeScannerPy_v14.exe <folder of images>" and press enter OR
-  - D Open a command prompt (In Windows, press the Windows key, type 'cmd', press enter, then dir to the location of the exe), type "barcode-QRcodeScannerPy_v14.exe <folder of images> <destination folder for renamed images>" to specify by the input folder and destination folder
+  - D Open a command prompt (In Windows, press the Windows key, type 'cmd', press enter, then dir to the location of the exe), type "barcode-QRcodeScannerPy_v14.exe \<folder of images\> \<destination folder for renamed images\>" to specify by the input folder and destination folder
 
   - i.e.: Run "barcode-QRcodeScannerPy_v14.exe [<folder of images> [<destination folder for renamed images>]]"
 
