@@ -2,6 +2,7 @@
 # Output: Folder with QR codes recognised and files renamed according to QR code content
 # Mark Whitty
 # UNSW
+# https://github.com/markwhittyunsw/QR_image_renamer
 # Derived from https://github.com/spmallick/learnopencv/tree/master/barcode-QRcodeScanner
 
 from __future__ import print_function
@@ -17,8 +18,6 @@ import cv2
 import time
 from datetime import datetime
 import sys
-import maw_crop_leaf
-#import pdb
 import re  # Regular expressions used for file type matching
 from numpy import array
 from tkinter import filedialog  # For a GUI for user specified directories
