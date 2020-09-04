@@ -12,8 +12,8 @@ This works together with a bulk QR code generator program: https://github.com/ma
  - This can be done in any one of at least four ways:
   - Double-click the .exe and select the folder containing images to be renamed from the window that pops up. Then select the folder where you want the renamed images to be saved (original images are not altered) OR
   - In Windows, drag the folder containing images to be renamed onto the .exe and the renamed images will be placed in a subfolder OR
-  - Open a command prompt (In Windows, press the Windows key, type 'cmd', press enter, then dir to the location of the exe), type "barcode-QRcodeScannerPy_v14.exe \<folder of images\>" and press enter OR
-  - Open a command prompt (In Windows, press the Windows key, type 'cmd', press enter, then dir to the location of the exe), type "barcode-QRcodeScannerPy_v14.exe \<folder of images\> \<destination folder for renamed images\>" to specify by the input folder and destination folder
+  - Open a command prompt (In Windows, press the Windows key, type 'cmd', press enter), then dir to the location of the exe, type "barcode-QRcodeScannerPy_v14.exe \<folder of images\>" and press enter OR
+  - Open a command prompt (In Windows, press the Windows key, type 'cmd', press enter), then dir to the location of the exe, type "barcode-QRcodeScannerPy_v14.exe \<folder of images\> \<destination folder for renamed images\>" to specify by the input folder and destination folder
 3. The destination folder will contain the renamed images, as well as a decoding log (decoding_log.txt) which can be used to see which images were successfully renamed and the corresponding filenames and QR code values. This log is tab separated for easy import into Excel. decoding_stats.txt will give brief statistics on the success rate. 
 4. Images which were not successfully decoded are copied to the destination folder and prepended by a underscore so they are readily identifiable. Images with non-unique QR code contents have their filenames extended by an incrementing counter, so double-ups can easily be found.
 
