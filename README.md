@@ -1,6 +1,8 @@
 # QR_image_renamer
 Code to rename a folder of images according to the content of a QR code in each image
 - Author: Mark Whitty UNSW
+- m.whitty@unsw.edu.au
+- Source code: https://github.com/markwhittyunsw/QR_image_renamer
 - All rights reserved
 
 ## Usage:
