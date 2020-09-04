@@ -17,7 +17,7 @@ This works together with a bulk QR code generator program: https://github.com/ma
 3. The destination folder will contain the renamed images, as well as a decoding log (decoding_log.txt) which can be used to see which images were successfully renamed and the corresponding filenames and QR code values. This log is tab separated for easy import into Excel. decoding_stats.txt will give brief statistics on the success rate. 
 4. Images which were not successfully decoded are copied to the destination folder and prepended by a underscore so they are readily identifiable. Images with non-unique QR code contents have their filenames extended by an incrementing counter, so double-ups can easily be found.
 
-## To compile from sourceInstallation instructions
+## To compile from source
 HINT: Use Terminal in PyCharm to run commands for installing packages using pip (not Python Console)
  - install python 3.7.2 64 bit edition
  - update pip: "python -m pip install --upgrade pip" from location of Python installation using Administrator privileged CMD shell.
