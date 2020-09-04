@@ -20,8 +20,9 @@ import sys
 import maw_crop_leaf
 #import pdb
 import re  # Regular expressions used for file type matching
-from PIL import Image  # For image rotation
 from numpy import array
+from tkinter import filedialog  # For a GUI for user specified directories
+from tkinter import *
 
 def decode(im):
     # Find only QR codes (remove the second argument to find other symbols)
@@ -98,8 +99,13 @@ if __name__ == '__main__':
 
     # Read target and output paths
     if len(sys.argv) < 2:
+        # No command line input or output directories specified, use a GUI to ask the user to specify these
         file_input_path = "."
         file_output_path = "."
+        root = Tk()
+        file_input_path = filedialog.askdirectory(title="Location of images to be decoded", initialdir=".", parent=root)
+        file_output_path = filedialog.askdirectory(title="Location where renamed images will be copied",
+                                                   initialdir=file_input_path, parent=root)
     elif len(sys.argv) < 3:
         file_input_path = sys.argv[1]
         file_output_path = os.path.join(file_input_path,
@@ -137,6 +143,9 @@ if __name__ == '__main__':
         print("Output directory ", file_output_path, " created ")
     else:
         print("Warning: output directory ", file_output_path, " already exists, existing files may be overwritten")
+
+    while not os.path.exists(file_output_path):
+        time.sleep(0.5)  # Short delay to ensure directory is created
 
     input_files_it = 0
     num_correctly_parsed_files = 0
@@ -197,7 +206,7 @@ if __name__ == '__main__':
         if os.path.exists(new_filename):
             # File already exists
             while os.path.exists(new_filename):
-                new_filename = file_output_path + qr_data + "_" + str(file_iterator).zfill(3) + os.path.splitext(infile)[1]
+                new_filename = os.path.join(file_output_path, qr_data + "_" + str(file_iterator).zfill(3) + os.path.splitext(infile)[1])
                 file_iterator += 1
         shutil.copy2(infile, new_filename)
 
