@@ -93,57 +93,23 @@ def resize_max(im, max_size):
 def does_file_exist_in_dir(path):
     return any(os.path.isfile(os.path.join(path, i)) for i in os.listdir(path))
 
-# Switch error reason based on human input
-def switch_error(key):
-    switcher = {
-        '1': "Insufficient contrast",
-        '2': "Variable lighting across code",
-        '3': "Occlusion of code",
-        '4': "Code bent",
-        '5': "Code angle too acute",
-        '6': "No code in image",
-        '7': "Out of focus",
-        '8': "Unknown"
-    }
-    return switcher.get(key, "Invalid key")
-
-
-# Rotate an image about its centre by a given number of degrees,
-# not handling scaling and cropping
-def maw_rotate_image(im, angle):
-    im2 = Image.fromarray(im)
-    im_rotated = im2.rotate(angle, expand=True)
-    im_rotated = array(im_rotated)
-    return im_rotated
-
-# Get indices of n largest values in multidimensional array
-# https://stackoverflow.com/questions/6910641/how-do-i-get-indices-of-n-maximum-values-in-a-numpy-array
-def largest_indices(ary, n):
-    # """Returns the n largest indices from a numpy array."""
-    flat = ary.flatten()
-    indices = np.argpartition(flat, -n)[-n:]
-    indices = indices[np.argsort(-flat[indices])]
-    return np.unravel_index(indices, ary.shape)
-
-
-def swap_xy_coords(coords):
-    for x, y in coords:
-        yield (y, x)
-
-
-
 # Main
 if __name__ == '__main__':
 
-    # Read destination path
+    # Read target and output paths
     if len(sys.argv) < 2:
         file_input_path = "."
+        file_output_path = "."
+    elif len(sys.argv) < 3:
+        file_input_path = sys.argv[1]
+        file_output_path = os.path.join(file_input_path,
+                                        os.path.basename(os.path.abspath(file_input_path)) + "_decoded\\")
     else:
         file_input_path = sys.argv[1]
+        file_output_path = sys.argv[2]
 
-    file_output_path = os.path.join(file_input_path, os.path.basename(os.path.abspath(file_input_path)) + "_decoded/")
     max_image_dimension = 1600  # Maximum image dimension, if greater than this will be resized before processing
-        # (output image is also resized), as the QR code decoder (pyzbar) has a size limit around 2000 pixels.
+        # (output image remained unchanges), as the QR code decoder (pyzbar) has a size limit around 2000 pixels.
 
     # Check if input directory exists and contains files
     if not os.path.exists(file_input_path):
@@ -165,12 +131,12 @@ if __name__ == '__main__':
         print("Warning: No image files in input directory: ", file_input_path)
         exit(0)
 
-    # Create target directory & all intermediate directories if don't exists
+    # Create target directory & all intermediate directories if it doesn't exists
     if not os.path.exists(file_output_path):
         os.makedirs(file_output_path)
         print("Output directory ", file_output_path, " created ")
     else:
-        print("Warning: directory ", file_output_path, " already exists, existing files may be overwritten")
+        print("Warning: output directory ", file_output_path, " already exists, existing files may be overwritten")
 
     input_files_it = 0
     num_correctly_parsed_files = 0
@@ -182,14 +148,16 @@ if __name__ == '__main__':
 
     print(str(num_input_files), " image files in ", file_input_path, " directory")
     if num_input_files > 10000:
-        print("Warning: Halting execution as more than 10,000 files input")
+        print("Warning: Halting execution as more than 10,000 files input. This program is not designed for such a" 
+              " large volume of images.")
         exit(0)
 
+    # Attempts to decode each image
     for infile in input_files:
         # Read image
         im = cv2.imread(infile)
         if im is None:
-            print("Warning: image " + infile + " could not be read")
+            print("Warning: image " + infile + " could not be read, trying next file")
             continue
         input_files_it = input_files_it + 1
 
@@ -198,41 +166,39 @@ if __name__ == '__main__':
 
         decodedObject = decode(resized_im)
         if decodedObject is None:
-            # If image is not correctly processed, ignore user input
-            # If image not correctly processed, display it and wait for user input
-            #cv2.imshow("Resized image " + str(os.path.basename(infile)), resized_im)
-            #key = cv2.waitKey()
-            #cv2.destroyAllWindows()
-
-            # Copy file as is and append '_' to filename. This will overwrite any existing files with this name (which are presumably useless)
+            # If image is not correctly processed, copy file as is and append '_' to filename.
+            # This will overwrite any existing files with this name (which are presumably useless)
             new_filename = os.path.join(file_output_path, ('_' + os.path.basename(infile)))
             shutil.copy2(infile, new_filename)
-            log_file.write(str(input_files_it) + "\t" + os.path.basename(infile) + "\t" + "_" + os.path.basename(infile) + "\t" + "1" + "\t" + "Unable to parse code in image" + "\n")
+            log_file.write(str(input_files_it) + "\t" + os.path.basename(infile) + "\t" + "_" + os.path.basename(infile) \
+                           + "\t" + "1" + "\t" + "Unable to parse code in image" + "\n")
 
             continue
         num_correctly_parsed_files = num_correctly_parsed_files + 1
         #display(resized_im, decodedObject)
 
         # Copy resized image and change its filename to match QR code
-        # New filename, noting that QR code data includes 'b' and two apostraphes, presumably to indicate data type, so these are stripped out
+        # New filename, noting that QR code data includes 'b' and two apostraphes, presumably to indicate data type,
+        # so these are stripped out
         qr_data = str(decodedObject.data)[2:-1]
 
         # Remove strange characters from filename and replace with underscores
-        # Derived from list of special characters on Windows here: https://en.wikipedia.org/wiki/Filename#Reserved_characters_and_words
+        # Derived from list of special characters on Windows here:
+        # https://en.wikipedia.org/wiki/Filename#Reserved_characters_and_words
         qr_data = qr_data.replace('/', '_').replace('\\', '_').replace('?', '_').replace('%', '_') \
             .replace('*', '_').replace(':', '_').replace('|', '_').replace('\"', '_').replace('<', '_') \
             .replace('>', '_').replace('.', '_').replace(' ', '_')
 
-        new_filename = file_output_path + qr_data + os.path.splitext(infile)[1]
+        new_filename = os.path.join(file_output_path, qr_data + os.path.splitext(infile)[1])
         file_iterator = 0
 
-        # Beware of filenames with strange characters
+        # Copy original image to new file with filename set to decoded QR code value, incrementing a filename suffix if
+        # a duplicate detected
         if os.path.exists(new_filename):
             # File already exists
             while os.path.exists(new_filename):
                 new_filename = file_output_path + qr_data + "_" + str(file_iterator).zfill(3) + os.path.splitext(infile)[1]
                 file_iterator += 1
-        # cv2.imwrite(new_filename, im)
         shutil.copy2(infile, new_filename)
 
         log_file.write(str(input_files_it) + "\t" + os.path.basename(infile) + "\t" +
@@ -245,7 +211,10 @@ if __name__ == '__main__':
     stats_file = open(os.path.join(file_output_path, "decoding_stats.txt"), "w+")
     stats_file.write(os.path.basename(__file__) + " executed at " + str(datetime.now().isoformat(' ')) + '\n')
     stats_file.write("Read " + str(input_files_it) + " images from " + file_input_path + '\n')
-    stats_file.write("Correctly parsed QR codes in " + str(num_correctly_parsed_files) + " image(s) and unable to parse " + str(input_files_it-num_correctly_parsed_files) + " image(s)\n")
+    stats_file.write("Correctly parsed QR codes in " + str(num_correctly_parsed_files) + " image(s) and unable to parse " \
+                     + str(input_files_it-num_correctly_parsed_files) + " image(s)\n")
+    stats_file.write("Images unable to be parsed have had an underscore prepended to their filename\n")
+    stats_file.write("Wrote correctly parsed files to " + file_output_path + '\n')
     stats_file.close()
 
     log_file.close()
