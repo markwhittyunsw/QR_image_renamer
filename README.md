@@ -1,12 +1,23 @@
 # QR_image_renamer
-Code to rename a folder of images according to the content of a QR code in each image
-- Author: Mark Whitty UNSW
-- All rights reserved
+Code to rename a folder of images according to the content of a QR code in each image. 
+This works together with a bulk QR code generator program: https://github.com/markwhittyunsw/GenerateQRCode
+- Author: Mark Whitty UNSW (the original version of this code was written while on sabbatical at Plant and Food Research New Zealand)
+- m.whitty@unsw.edu.au
+- Source code: https://github.com/markwhittyunsw/QR_image_renamer
+- MIT licence
 
-## Usage:
- - `GenerateTestImages_v4 [Path to output directory for images (automatically created and timestamped if not specified] [Path to background files (assumed to reside at Test_data\\backgrounds if not specified)]`
+## To run: 
+1. Download the barcode-QRcodeScannerPy_v14.zip file from the 'dist' folder above and unzip the .exe file
+2. Run the .exe as "barcode-QRcodeScannerPy_v14.exe [\<folder of images\> [\<destination folder for renamed images\>]]"
+ - This can be done in any one of at least four ways:
+  - Double-click the .exe and select the folder containing images to be renamed from the window that pops up. Then select the folder where you want the renamed images to be saved (original images are not altered) OR
+  - In Windows, drag the folder containing images to be renamed onto the .exe and the renamed images will be placed in a subfolder OR
+  - Open a command prompt (In Windows, press the Windows key, type 'cmd', press enter), then dir to the location of the exe, type "barcode-QRcodeScannerPy_v14.exe \<folder of images\>" and press enter OR
+  - Open a command prompt (In Windows, press the Windows key, type 'cmd', press enter), then dir to the location of the exe, type "barcode-QRcodeScannerPy_v14.exe \<folder of images\> \<destination folder for renamed images\>" to specify by the input folder and destination folder
+3. The destination folder will contain the renamed images, as well as a decoding log (decoding_log.txt) which can be used to see which images were successfully renamed and the corresponding filenames and QR code values. This log is tab separated for easy import into Excel. decoding_stats.txt will give brief statistics on the success rate. 
+4. Images which were not successfully decoded are copied to the destination folder and prepended by a underscore so they are readily identifiable. Images with non-unique QR code contents have their filenames extended by an incrementing counter, so double-ups can easily be found.
 
-## Installation instructions
+## To compile from source
 HINT: Use Terminal in PyCharm to run commands for installing packages using pip (not Python Console)
  - install python 3.7.2 64 bit edition
  - update pip: "python -m pip install --upgrade pip" from location of Python installation using Administrator privileged CMD shell.
@@ -14,7 +25,8 @@ HINT: Use Terminal in PyCharm to run commands for installing packages using pip 
  - pip install numpy
  - pip install opencv-contrib-python
  - run barcode-QRcodeScannerPy.py to install OpenCV (cv2)
- - pip install pyinstaller
+ - pip install pyinstaller [Only needed to generate an exe]
+ - python barcode-QRcodeScannerPy_v14
 
 ## Using pyinstaller to generate an exe
 https://medium.com/dreamcatcher-its-blog/making-an-stand-alone-executable-from-a-python-script-using-pyinstaller-d1df9170e263
@@ -50,7 +62,7 @@ Notice if jpg is created, this might need additional lines in .spec as the githu
  - [ ] Given the list of generated QR codes and processed set of codes should have same filenames, can have a tool to compare them and identify duplicates and missing items.
  - [ ] Encode scale into the QR code, so its distance from the reader is known (assume printed correctly)
  - [ ] Add website detailing the project and a fixed QR code which points to it, automatically generated on the cover of each document.
- - [-] Plan paper around the use of these codes - submitted
+ - [ ] Plan paper around the use of these codes - submitted
  - [ ] Q: How to make into a Python module?
  - [ ] Q: How to make into a Jupyter notebook? And import the module.
  - [ ] Add salt and pepper noise just on code area. At code resolution.
