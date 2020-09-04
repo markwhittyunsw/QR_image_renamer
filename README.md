@@ -61,7 +61,7 @@ Notice if jpg is created, this might need additional lines in .spec as the githu
  - [ ] Given the list of generated QR codes and processed set of codes should have same filenames, can have a tool to compare them and identify duplicates and missing items.
  - [ ] Encode scale into the QR code, so its distance from the reader is known (assume printed correctly)
  - [ ] Add website detailing the project and a fixed QR code which points to it, automatically generated on the cover of each document.
- - [-] Plan paper around the use of these codes - submitted
+ - [ ] Plan paper around the use of these codes - submitted
  - [ ] Q: How to make into a Python module?
  - [ ] Q: How to make into a Jupyter notebook? And import the module.
  - [ ] Add salt and pepper noise just on code area. At code resolution.
