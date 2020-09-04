@@ -4,7 +4,7 @@ This works together with a bulk QR code generator program: https://github.com/ma
 - Author: Mark Whitty UNSW
 - m.whitty@unsw.edu.au
 - Source code: https://github.com/markwhittyunsw/QR_image_renamer
-- All rights reserved
+- MIT licence
 
 ## To run: 
 1. Download the barcode-QRcodeScannerPy_v14.zip file from the 'dist' folder above and unzip the .exe file
