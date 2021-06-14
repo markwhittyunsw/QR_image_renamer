@@ -1,0 +1,9 @@
+Block,Variety,Treatment,Side,Vine,ID
+1,SBL,1,E,1,1_1
+1,PNN,2,E,2,1_2
+1,SBL,3,E,3,1_3
+1,PNN,4,E,4,1_4
+2,SBL,None,E,1,2_1
+2,PNN,None,E,2,2_2
+2,SBL,None,E,3,2_3
+2,MER,None,E,4,2_4
