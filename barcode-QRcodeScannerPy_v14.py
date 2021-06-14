@@ -319,14 +319,14 @@ def parse_all_images(file_images_input_path):
         decodedObject = decode(resized_im, infile)
         if decodedObject is None:
             # If image is not correctly processed, save the status in the dataframe as 1
-            parsed_images_list.append([str(input_image_files_it), os.path.basename(infile), 1, "", "", "", ""])
+            parsed_images_list.append([str(input_image_files_it), os.path.abspath(infile), 1, "", "", "", ""])
             continue
         num_correctly_parsed_files = num_correctly_parsed_files + 1
         # display(resized_im, decodedObject)
 
         # New record, noting that QR code data includes 'b' and two apostraphes, presumably to indicate data type,
         # so these are stripped out
-        parsed_images_list.append([str(input_image_files_it), os.path.basename(infile), 0, str(decodedObject.data)[2:-1],
+        parsed_images_list.append([str(input_image_files_it), os.path.abspath(infile), 0, str(decodedObject.data)[2:-1],
                                     str(decodedObject.type), str(decodedObject.rect), str(decodedObject.polygon)])
 
         print("Completed image ", input_image_files_it, " of ", num_input_image_files, " [",
@@ -361,35 +361,42 @@ def check_parsed_images_against_original_list(original_qr_df, parsed_images_df):
     return merged_df
 
 
-def compute_output_filename(qr_data, file_renamed_images_output_path, infile):
-    # Copy resized image and change its filename to match QR code
+# def compute_output_filename(qr_data, file_renamed_images_output_path, infile):
+#     # Copy resized image and change its filename to match QR code
+#
+#     # Remove strange characters from filename and replace with underscores
+#     # Derived from list of special characters on Windows here:
+#     # https://en.wikipedia.org/wiki/Filename#Reserved_characters_and_words
+#     qr_data = qr_data.replace('/', '_').replace('\\', '_').replace('?', '_').replace('%', '_') \
+#         .replace('*', '_').replace(':', '_').replace('|', '_').replace('\"', '_').replace('<', '_') \
+#         .replace('>', '_').replace('.', '_').replace(' ', '_')
+#
+#
+#
+#
+# def apply_compute_output_filename(qr_df, file_renamed_images_output_path):
+#     return compute_output_filename(qr_df['QR_Data_'], file_renamed_images_output_path, qr_df['Input filename'])
 
-    # Remove strange characters from filename and replace with underscores
-    # Derived from list of special characters on Windows here:
-    # https://en.wikipedia.org/wiki/Filename#Reserved_characters_and_words
-    qr_data = qr_data.replace('/', '_').replace('\\', '_').replace('?', '_').replace('%', '_') \
-        .replace('*', '_').replace(':', '_').replace('|', '_').replace('\"', '_').replace('<', '_') \
-        .replace('>', '_').replace('.', '_').replace(' ', '_')
 
-    new_filename = os.path.join(file_renamed_images_output_path, qr_data + os.path.splitext(infile)[1])
-
-
-def apply_compute_output_filename(qr_df, file_renamed_images_output_path):
-    return compute_output_filename(qr_df['QR_Data_'], file_renamed_images_output_path, qr_df['Input filename'])
-
-
-def rename_images(file_renamed_images_output_path, merged_df, infile):
+def rename_images(file_renamed_images_output_path, merged_df):
     # Create target directory & all intermediate directories if it doesn't exists
     if os.path.exists(file_renamed_images_output_path):
         print("Warning: output directory ", file_renamed_images_output_path,
               " already exists, existing files may be overwritten")
 
     # Calculate output filename for each image
-    merged_df['output_filename'] = merged_df['QR_Data_'].apply(apply_compute_output_filename, axis=1,
-                                                               args=file_renamed_images_output_path)
+    # merged_df['output_filename'] = merged_df['QR_Data_'].apply(apply_compute_output_filename,
+    #                                                            args=file_renamed_images_output_path)
 
-    for merged_image in merged_df:
-        shutil.copy2(merged_df['Input filename'], merged_df['output_filename'])
+    for index, merged_image in merged_df.iterrows():
+        qr_data = merged_image['QR_Data_']
+        qr_data = qr_data.replace('/', '_').replace('\\', '_').replace('?', '_').replace('%', '_') \
+            .replace('*', '_').replace(':', '_').replace('|', '_').replace('\"', '_').replace('<', '_') \
+            .replace('>', '_').replace('.', '_').replace(' ', '_')
+        new_filename = os.path.join(file_renamed_images_output_path,
+                                    qr_data + os.path.splitext(merged_image['Input filename'])[1])
+
+        shutil.copy2(merged_image['Input filename'], new_filename)
 
     # Write out statistics to a text file
     # stats_file = open(os.path.join(file_renamed_images_output_path, "decoding_stats.txt"), "w+")
@@ -444,4 +451,4 @@ if __name__ == '__main__':
     merged_df.to_csv(os.path.join(file_images_input_path, "merged_log_" +
                                   dt.now().strftime('%Y-%m-%d_%H.%M.%S') + ".txt"))
 
-    # rename_images(file_renamed_images_output_path, merged_df)
+    rename_images(file_renamed_images_output_path, merged_df)
