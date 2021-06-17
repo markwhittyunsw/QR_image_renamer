@@ -1,0 +1,1 @@
+,Trial name,Site,Block,Vine,Replicate,QR_Data_,Image number,Input filename,Status (0=success),Type,Rect,Polygon,Duplicated

@@ -26,6 +26,9 @@ from tkinter import *
 from tabulate import tabulate
 import pandas as pd
 import pyqrcode
+import PySimpleGUI as sg
+
+
 
 
 def read_qr_labels_from_file(filename):
@@ -413,6 +416,72 @@ def rename_images(file_renamed_images_output_path, merged_df):
 
 
 if __name__ == '__main__':
+    # Set up the GUI: https://realpython.com/pysimplegui-python/
+    # First the window layout in 2 columns
+
+    file_list_column = [
+        [
+            sg.Text("Input CSV"),
+            sg.In(size=(25, 1), enable_events=True, key="-INPUTCSV-"),
+            sg.FileBrowse(),
+            sg.In(size=(25, 1), enable_events=True, key="-OUTPUTFOLDER-"),
+            sg.FolderBrowse(),
+            sg.Button("Generate")
+        ],
+        [
+            sg.Text("Parse"),
+            sg.In(size=(25, 1), enable_events=True, key="-INPUTFOLDER-"),
+            sg.FolderBrowse(),
+            sg.Button("Parse")
+        ],
+        [
+            sg.Text("Check"),
+            sg.Button("Check")
+        ],
+        [
+            sg.Text("Rename"),
+            sg.In(size=(25, 1), enable_events=True, key="-RENAMEDFOLDER-"),
+            sg.FolderBrowse(),
+            sg.Checkbox("Generate log file"),
+            sg.Button("Rename")
+        ],
+    ]
+
+    # For now will only show the name of the file that was chosen
+    image_viewer_column = [
+        [sg.Text("Status:")],
+        [sg.Text(size=(40, 1), key="-TOUT-")],
+    ]
+
+    # ----- Full layout -----
+    layout = [
+        [
+            sg.Column(file_list_column),
+            sg.VSeperator(),
+            sg.Column(image_viewer_column),
+        ]
+    ]
+
+    window = sg.Window("QR code renamer", layout)
+
+    # Run the Event Loop
+    while True:
+        event, values = window.read()
+        if event == "Exit" or event == sg.WIN_CLOSED:
+            break
+        # Folder name was filled in, make a list of files in the folder
+        if event == "-OUTPUTFOLDER-":
+            folder = values["-OUTPUTFOLDER-"]
+            try:
+                # Get list of files in folder
+                file_list = os.listdir(folder)
+            except:
+                file_list = []
+
+    window.close()
+
+
+
     # Read target and output paths from a GUI (command line operation has been deprecated)
     root = Tk()
     file_qr_labels = filedialog.askopenfilename(title="Location of CSV file containing desired QR codes",

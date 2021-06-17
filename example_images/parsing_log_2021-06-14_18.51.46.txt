@@ -1,0 +1,5 @@
+,Image number,Input filename,Status (0=success),QR_Data_,Type,Rect,Polygon
+0,1,20190125_test_image_2016px_v2.jpg,0,001_R01_B01_V01_Merlot_V-B,QRCODE,"Rect(left=724, top=319, width=687, height=675)","[Point(x=724, y=374), Point(x=765, y=994), Point(x=1411, y=968), Point(x=1367, y=319)]"
+1,2,DJI_0020.JPG,1,,,,
+2,3,image_1.png,0,Trial name-SBAS2018-Site-1-Block-40A-Vine-1-Replicate-1,QRCODE,"Rect(left=59, top=28, width=411, height=411)","[Point(x=59, y=438), Point(x=470, y=439), Point(x=469, y=28), Point(x=60, y=29)]"
+3,4,zbar-test.jpg,0,http://LearnOpenCV.com,QRCODE,"Rect(left=213, top=50, width=173, height=173)","[Point(x=213, y=50), Point(x=213, y=222), Point(x=386, y=223), Point(x=385, y=50)]"
