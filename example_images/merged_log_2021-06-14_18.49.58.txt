@@ -1,3 +1,0 @@
-,Trial name,Site,Block,Vine,Replicate,QR_Data_,Image number,Input filename,Status (0=success),Type,Rect,Polygon,Duplicated
-0,SBAS2018,1,40A,1,1,Trial name-SBAS2018-Site-1-Block-40A-Vine-1-Replicate-1,3,image_1.png,0,QRCODE,"Rect(left=59, top=28, width=411, height=411)","[Point(x=59, y=438), Point(x=470, y=439), Point(x=469, y=28), Point(x=60, y=29)]",False
-1,SBAS2018,1,40A,1,1,Trial name-SBAS2018-Site-1-Block-40A-Vine-1-Replicate-1,3,image_1.png,0,QRCODE,"Rect(left=59, top=28, width=411, height=411)","[Point(x=59, y=438), Point(x=470, y=439), Point(x=469, y=28), Point(x=60, y=29)]",False

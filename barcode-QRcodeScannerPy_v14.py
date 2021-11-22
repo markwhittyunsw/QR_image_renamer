@@ -316,8 +316,9 @@ def parse_all_images(file_images_input_path):
             continue
         input_image_files_it = input_image_files_it + 1
 
-        # Check size and if too large, resize it
-        resized_im, scaling_factor = resize_max(im, max_image_dimension)
+        # Check size and if too large, resize it before processing
+        # (output image remained unchanged), as the QR code decoder (pyzbar) has a size limit around 2000 pixels.
+        resized_im, scaling_factor = resize_max(im, 1600)
 
         decodedObject = decode(resized_im, infile)
         if decodedObject is None:
@@ -423,15 +424,15 @@ if __name__ == '__main__':
         [
             sg.Text("Input CSV"),
             sg.In(size=(25, 1), enable_events=True, key="-INPUTCSV-"),
-            sg.FileBrowse(),
+            sg.FileBrowse(initial_folder="csv_input", file_types=(("CSV", "*.csv"),)),
             sg.In(size=(25, 1), enable_events=True, key="-OUTPUTFOLDER-"),
-            sg.FolderBrowse(),
+            sg.FolderBrowse(initial_folder="generated_codes"),
             sg.Button("Generate")
         ],
         [
             sg.Text("Parse"),
             sg.In(size=(25, 1), enable_events=True, key="-INPUTFOLDER-"),
-            sg.FolderBrowse(),
+            sg.FolderBrowse(initial_folder="example_images"),
             sg.Button("Parse")
         ],
         [
@@ -441,7 +442,7 @@ if __name__ == '__main__':
         [
             sg.Text("Rename"),
             sg.In(size=(25, 1), enable_events=True, key="-RENAMEDFOLDER-"),
-            sg.FolderBrowse(),
+            sg.FolderBrowse(initial_folder="renamed_images"),
             sg.Checkbox("Generate log file"),
             sg.Button("Rename")
         ],
@@ -464,60 +465,65 @@ if __name__ == '__main__':
 
     window = sg.Window("QR code renamer", layout)
 
+    file_qr_labels = []
+    file_generated_images_output_path = []
+    file_images_input_path = []
+    file_renamed_images_output_path = []
+
     # Run the Event Loop
     while True:
         event, values = window.read()
         if event == "Exit" or event == sg.WIN_CLOSED:
             break
         # Folder name was filled in, make a list of files in the folder
-        if event == "-OUTPUTFOLDER-":
-            folder = values["-OUTPUTFOLDER-"]
-            try:
-                # Get list of files in folder
-                file_list = os.listdir(folder)
-            except:
-                file_list = []
+        if event == "Generate":
+            file_qr_labels = values["-INPUTCSV-"]
+            file_generated_images_output_path = values["-OUTPUTFOLDER-"]
 
+            original_qr_df = generate_QR_output_files(file_generated_images_output_path, file_qr_labels)
+            print("Checking duplicate QR codes from provided CSV")
+            check_duplicates(original_qr_df, "QR_Data_")  # Just check for and display duplicated QR codes in input CSV
+            # TODO: Remove duplicates in generated QR codes
+        if event == "Parse":
+            file_images_input_path = values["-INPUTFOLDER-"]
+            # Check if input directory exists and contains files
+            if not does_file_exist_in_dir(file_images_input_path):
+                print("Warning: No files in input directory: ", file_images_input_path)
+                break
+            parsed_images_df = parse_all_images(file_images_input_path)
+        if event == "Check":
+            # TODO: Ensure images have been parsed first
+            print("Checking duplicates in parsed images")
+            parsed_images_duplicates_checked_df = check_duplicates(parsed_images_df, "QR_Data_")
+            # Add option to delete duplicate images? Dangerous...should let user choose.
+
+            # Select only the first entry of any duplicates
+            parsed_images_duplicates_removed_df = parsed_images_duplicates_checked_df.loc[
+                parsed_images_duplicates_checked_df['Duplicated'] == False]
+
+            merged_df = check_parsed_images_against_original_list(original_qr_df, parsed_images_duplicates_removed_df)
+            merged_df.to_csv(os.path.join(file_images_input_path, "merged_log_" +
+                                          dt.now().strftime('%Y-%m-%d_%H.%M.%S') + ".txt"))
+        if event == "Rename":
+            # TODO: Ensure images have been parsed and checked first
+            rename_images(file_renamed_images_output_path, merged_df)
     window.close()
 
-
+    exit(1)  # Exit while debugging
 
     # Read target and output paths from a GUI (command line operation has been deprecated)
-    root = Tk()
-    file_qr_labels = filedialog.askopenfilename(title="Location of CSV file containing desired QR codes",
-                                                initialdir="csv_input", initialfile="C:\\Users\\z3099851\\OneDrive - UNSW\\Code\\QR_image_renamer\\csv_input\\trial_records_test.csv", parent=root)
-    file_generated_images_output_path = filedialog.askdirectory(title="Location where generated image files will be "
-                                                                      "placed", initialdir="generated_codes", parent=root)
+    # root = Tk()
+    # file_qr_labels = filedialog.askopenfilename(title="Location of CSV file containing desired QR codes",
+    #                                             initialdir="csv_input", initialfile="C:\\Users\\z3099851\\OneDrive - UNSW\\Code\\QR_image_renamer\\csv_input\\trial_records_test.csv", parent=root)
+    # file_generated_images_output_path = filedialog.askdirectory(title="Location where generated image files will be "
+    #                                                                   "placed", initialdir="generated_codes", parent=root)
+    #
+    # file_images_input_path = filedialog.askdirectory(title="Location of images to be decoded",
+    #                                                  initialdir="example_images", parent=root)
+    # file_renamed_images_output_path = filedialog.askdirectory(title="Location where renamed images will be copied",
+    #                                                           initialdir="renamed_images", parent=root)
 
-    file_images_input_path = filedialog.askdirectory(title="Location of images to be decoded",
-                                                     initialdir="example_images", parent=root)
-    file_renamed_images_output_path = filedialog.askdirectory(title="Location where renamed images will be copied",
-                                                              initialdir="renamed_images", parent=root)
 
-    max_image_dimension = 1600  # Maximum image dimension, if greater than this will be resized before processing
-     # (output image remained unchanged), as the QR code decoder (pyzbar) has a size limit around 2000 pixels.
 
-    # Check if input directory exists and contains files
-    if not does_file_exist_in_dir(file_images_input_path):
-        print("Warning: No files in input directory: ", file_images_input_path)
-        exit(1)
 
-    original_qr_df = generate_QR_output_files(file_generated_images_output_path, file_qr_labels)
-    print("Checking duplicate QR codes from provided CSV")
-    check_duplicates(original_qr_df, "QR_Data_")  # Just check for and display duplicated QR codes in input CSV
-    # TODO: Remove duplicates in generated QR codes
 
-    parsed_images_df = parse_all_images(file_images_input_path)
-    print("Checking duplicates in parsed images")
-    parsed_images_duplicates_checked_df = check_duplicates(parsed_images_df, "QR_Data_")
-    # Add option to delete duplicate images? Dangerous...should let user choose.
-
-    # Select only the first entry of any duplicates
-    parsed_images_duplicates_removed_df = parsed_images_duplicates_checked_df.loc[
-        parsed_images_duplicates_checked_df['Duplicated'] == False]
-
-    merged_df = check_parsed_images_against_original_list(original_qr_df, parsed_images_duplicates_removed_df)
-    merged_df.to_csv(os.path.join(file_images_input_path, "merged_log_" +
-                                  dt.now().strftime('%Y-%m-%d_%H.%M.%S') + ".txt"))
-
-    rename_images(file_renamed_images_output_path, merged_df)

@@ -1,2 +1,0 @@
-,Block,Variety,Treatment,Side,Vine,ID,QR_Data_,Duplicated_x,Image number,Input filename,Status (0=success),Type,Rect,Polygon,Duplicated_y
-0,2,MER,None,E,4,2_4,Block-2-Variety-MER-Treatment-None-Side-E-Vine-4-ID-2_4,False,3,image2_4 - Copy.png,0,QRCODE,"Rect(left=63, top=47, width=411, height=411)","[Point(x=63, y=457), Point(x=474, y=458), Point(x=473, y=47), Point(x=64, y=48)]",False
