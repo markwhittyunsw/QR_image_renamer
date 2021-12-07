@@ -342,7 +342,7 @@ def parse_all_images(file_images_input_path):
                                          dt.now().strftime('%Y-%m-%d_%H.%M.%S') + ".txt"))
 
     # Only return correctly parsed images in the dataframe
-    return parsed_images_df.loc[parsed_images_df['Status (0=success)'] == 0]
+    return (parsed_images_df.loc[parsed_images_df['Status (0=success)'] == 0], input_image_files_it, num_input_image_files)
 
 
 def check_duplicates(df, col_name):
@@ -382,7 +382,7 @@ def check_parsed_images_against_original_list(original_qr_df, parsed_images_df):
 #     return compute_output_filename(qr_df['QR_Data_'], file_renamed_images_output_path, qr_df['Input filename'])
 
 
-def rename_images(file_renamed_images_output_path, merged_df):
+def rename_images(file_renamed_images_output_path, merged_df, GENERATE_LOG_FILE):
     # Create target directory & all intermediate directories if it doesn't exists
     if os.path.exists(file_renamed_images_output_path):
         print("Warning: output directory ", file_renamed_images_output_path,
@@ -422,36 +422,58 @@ if __name__ == '__main__':
 
     file_list_column = [
         [
-            sg.Text("Input CSV"),
+            sg.Text("Input CSV containing codes"),
             sg.In(size=(25, 1), enable_events=True, key="-INPUTCSV-"),
-            sg.FileBrowse(initial_folder="csv_input", file_types=(("CSV", "*.csv"),)),
+            sg.FileBrowse(initial_folder="csv_input", file_types=(("CSV", "*.csv"),))
+        ],
+        [
+            sg.Text("Location of generated QR codes"),
             sg.In(size=(25, 1), enable_events=True, key="-OUTPUTFOLDER-"),
-            sg.FolderBrowse(initial_folder="generated_codes"),
-            sg.Button("Generate")
+            sg.FolderBrowse(initial_folder="generated_codes")
         ],
         [
-            sg.Text("Parse"),
+            sg.Button("1. Generate")
+        ],
+        [
+            sg.HorizontalSeparator()
+        ],
+        [
+            sg.Text("Parse captured images to extract QR code content"),
             sg.In(size=(25, 1), enable_events=True, key="-INPUTFOLDER-"),
-            sg.FolderBrowse(initial_folder="example_images"),
-            sg.Button("Parse")
+            sg.FolderBrowse(initial_folder="example_images")
         ],
         [
-            sg.Text("Check"),
-            sg.Button("Check")
+            sg.Button("2. Parse")
         ],
         [
-            sg.Text("Rename"),
+            sg.HorizontalSeparator()
+        ],
+        [
+            sg.Text("Check extracted QR code content against input CSV")
+        ],
+        [
+            sg.Button("3. Check")
+        ],
+        [
+            sg.HorizontalSeparator()
+        ],
+        [
+            sg.Text("Rename images according to QR code content"),
             sg.In(size=(25, 1), enable_events=True, key="-RENAMEDFOLDER-"),
             sg.FolderBrowse(initial_folder="renamed_images"),
-            sg.Checkbox("Generate log file"),
-            sg.Button("Rename")
+            sg.Checkbox("Generate log file", key="-GENERATE_LOG_FILE-")
+        ],
+        [
+            sg.Button("4. Rename")
         ],
     ]
 
     # For now will only show the name of the file that was chosen
     image_viewer_column = [
-        [sg.Text("Status:")],
-        [sg.Text(size=(40, 1), key="-TOUT-")],
+        [sg.Text("Status:"),
+        sg.Text(size=(50, 3), key="-STATUS-")],
+        [sg.Text("Results:")],
+        [sg.Text(size=(50, 20), key="-RESULT_LIST-")],
     ]
 
     # ----- Full layout -----
@@ -469,30 +491,47 @@ if __name__ == '__main__':
     file_generated_images_output_path = []
     file_images_input_path = []
     file_renamed_images_output_path = []
-
+    GENERATED_STATE = False
+    PARSED_STATE = False
+    CHECKED_STATE = False
     # Run the Event Loop
     while True:
         event, values = window.read()
         if event == "Exit" or event == sg.WIN_CLOSED:
             break
         # Folder name was filled in, make a list of files in the folder
-        if event == "Generate":
+        if event == "1. Generate":
             file_qr_labels = values["-INPUTCSV-"]
             file_generated_images_output_path = values["-OUTPUTFOLDER-"]
 
             original_qr_df = generate_QR_output_files(file_generated_images_output_path, file_qr_labels)
-            print("Checking duplicate QR codes from provided CSV")
-            check_duplicates(original_qr_df, "QR_Data_")  # Just check for and display duplicated QR codes in input CSV
+
             # TODO: Remove duplicates in generated QR codes
-        if event == "Parse":
+            # print("Checking duplicate QR codes from provided CSV")
+            # check_duplicates(original_qr_df, "QR_Data_")  # Just check for and display duplicated QR codes in input CSV
+
+            window["-STATUS-"].update("Generated " + str(len(original_qr_df)) + " QR codes")
+            GENERATED_STATE = True
+        if event == "2. Parse":
             file_images_input_path = values["-INPUTFOLDER-"]
             # Check if input directory exists and contains files
+            if not os.path.exists(file_images_input_path):
+                print("Warning: Image input directory does not exist: ", file_images_input_path)
+                window["-STATUS-"].update("Image input directory does not exist: " + file_images_input_path)
+                continue
             if not does_file_exist_in_dir(file_images_input_path):
                 print("Warning: No files in input directory: ", file_images_input_path)
-                break
-            parsed_images_df = parse_all_images(file_images_input_path)
-        if event == "Check":
-            # TODO: Ensure images have been parsed first
+                window["-STATUS-"].update("No files in input directory: " + file_images_input_path)
+                continue
+            (parsed_images_df, input_image_files_it, num_input_image_files) = parse_all_images(file_images_input_path)
+            window["-STATUS-"].update("Parsed " + str(input_image_files_it) + " out of " + str(num_input_image_files) + " images correctly")
+            PARSED_STATE = True
+        if event == "3. Check":
+            # Ensure images have been parsed first
+            if not PARSED_STATE:
+                print("Parse images prior to checking")
+                window["-STATUS-"].update("Parse images prior to checking")
+                continue
             print("Checking duplicates in parsed images")
             parsed_images_duplicates_checked_df = check_duplicates(parsed_images_df, "QR_Data_")
             # Add option to delete duplicate images? Dangerous...should let user choose.
@@ -501,12 +540,28 @@ if __name__ == '__main__':
             parsed_images_duplicates_removed_df = parsed_images_duplicates_checked_df.loc[
                 parsed_images_duplicates_checked_df['Duplicated'] == False]
 
+            # Ensure the original list has been read in
+            if not GENERATED_STATE:
+                print("Generate images before checking")
+                window["-STATUS-"].update("Generate images before checking")
+                continue
             merged_df = check_parsed_images_against_original_list(original_qr_df, parsed_images_duplicates_removed_df)
             merged_df.to_csv(os.path.join(file_images_input_path, "merged_log_" +
                                           dt.now().strftime('%Y-%m-%d_%H.%M.%S') + ".txt"))
-        if event == "Rename":
-            # TODO: Ensure images have been parsed and checked first
-            rename_images(file_renamed_images_output_path, merged_df)
+            window["-STATUS-"].update("Of " + str(len(original_qr_df)) + " original QR codes and given " +
+                                      str(len(parsed_images_df)) + " images, " + str(len(merged_df)) +
+                                      " have been correctly matched. " +
+                                      str(len(parsed_images_df) - len(parsed_images_duplicates_removed_df)) +
+                                      " duplicated QR codes were parsed.")
+            CHECKED_STATE = True
+        if event == "4. Rename":
+            # Ensure images have been parsed and checked first
+            if not CHECKED_STATE:
+                print("Parse and check images prior to renaming")
+                window["-STATUS-"].update("Parse and check images prior to renaming")
+                continue
+            GENERATE_LOG_FILE = values["-GENERATE_LOG_FILE-"]
+            rename_images(file_renamed_images_output_path, merged_df, GENERATE_LOG_FILE)
     window.close()
 
     exit(1)  # Exit while debugging
