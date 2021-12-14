@@ -276,7 +276,7 @@ def generate_QR_output_files(file_generated_images_output_path, file_qr_labels):
     pdf.close()
 
     # Add machine_strings to the qr_dataframe
-    qr_dataframe["QR_Data_"] = qr_machine_string_list
+    qr_dataframe["QR_Data"] = qr_machine_string_list
 
     current_time = dt.now()
     print(str(num_labels_generated) + " images in " + str(((current_time - start_time).seconds)) + " seconds")
@@ -337,7 +337,7 @@ def process_all_images(file_images_input_path):
               int(float(input_image_files_it) / float(num_input_image_files) * 100), "%]")
 
     processed_images_df = pd.DataFrame(processed_images_list, columns=["Image number", "Input filename", "Status (0=success)",
-                                                                 "QR_Data_", "Type", "Rect", "Polygon"])
+                                                                 "QR_Data", "Type", "Rect", "Polygon"])
     processed_images_df.to_csv(os.path.join(file_images_input_path, "parsing_log_" +
                                          dt.now().strftime('%Y-%m-%d_%H.%M.%S') + ".txt"))
 
@@ -355,11 +355,11 @@ def check_duplicates(df, col_name):
 
 def check_processed_images_against_original_list(original_qr_df, processed_images_df):
     # Find entries in original list which have corresponding QR codes in processed images
-    # original_qr_df['image_exists'] = np.where(original_qr_df.QR_Data_ == processed_images_df.QR_Data_, 'True', 'False')
+    # original_qr_df['image_exists'] = np.where(original_qr_df.QR_Data == processed_images_df.QR_Data, 'True', 'False')
     # https: // blog.softhints.com / pandas - compare - columns - in -two - dataframes /
 
-    merged_df_all = pd.merge(original_qr_df, processed_images_df, how="outer", on="QR_Data_", indicator=True)
-    merged_df_correct = pd.merge(original_qr_df, processed_images_df, how="inner", on="QR_Data_", indicator=True)
+    merged_df_all = pd.merge(original_qr_df, processed_images_df, how="outer", on="QR_Data", indicator=True)
+    merged_df_correct = pd.merge(original_qr_df, processed_images_df, how="inner", on="QR_Data", indicator=True)
 
     # https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html
 
@@ -381,28 +381,44 @@ def check_processed_images_against_original_list(original_qr_df, processed_image
 #
 #
 # def apply_compute_output_filename(qr_df, file_renamed_images_output_path):
-#     return compute_output_filename(qr_df['QR_Data_'], file_renamed_images_output_path, qr_df['Input filename'])
+#     return compute_output_filename(qr_df['QR_Data'], file_renamed_images_output_path, qr_df['Input filename'])
 
 
-def rename_images(file_renamed_images_output_path, merged_df, GENERATE_LOG_FILE):
+def rename_images(file_renamed_images_output_path, merged_df):
     # Create target directory & all intermediate directories if it doesn't exists
     if os.path.exists(file_renamed_images_output_path):
         print("Warning: output directory ", file_renamed_images_output_path,
               " already exists, existing files may be overwritten")
 
     # Calculate output filename for each image
-    # merged_df['output_filename'] = merged_df['QR_Data_'].apply(apply_compute_output_filename,
+    # merged_df['output_filename'] = merged_df['QR_Data'].apply(apply_compute_output_filename,
     #                                                            args=file_renamed_images_output_path)
 
     for index, merged_image in merged_df.iterrows():
-        qr_data = merged_image['QR_Data_']
+        if merged_image['Input filename'] is None:
+            new_filename = ''
+            merged_df.at[index, 'Output filename'] = ''
+            continue
+        qr_data = merged_image['QR_Data']
         qr_data = qr_data.replace('/', '_').replace('\\', '_').replace('?', '_').replace('%', '_') \
             .replace('*', '_').replace(':', '_').replace('|', '_').replace('\"', '_').replace('<', '_') \
             .replace('>', '_').replace('.', '_').replace(' ', '_')
         new_filename = os.path.join(file_renamed_images_output_path,
                                     qr_data + os.path.splitext(merged_image['Input filename'])[1])
 
+        file_iterator = 0
+        # Copy original image to new file with filename set to decoded QR code value, incrementing a filename suffix if
+        # a duplicate detected
+        if os.path.exists(new_filename):
+            # File already exists
+            while os.path.exists(new_filename):
+                new_filename = os.path.join(file_renamed_images_output_path,
+                                            qr_data + "_" + str(file_iterator).zfill(3) +
+                                            os.path.splitext(merged_image['Input filename'])[1])
+                file_iterator += 1
         shutil.copy2(merged_image['Input filename'], new_filename)
+        merged_df.at[index, 'Output filename'] = new_filename
+
 
     # Write out statistics to a text file
     # stats_file = open(os.path.join(file_renamed_images_output_path, "decoding_stats.txt"), "w+")
@@ -415,7 +431,7 @@ def rename_images(file_renamed_images_output_path, merged_df, GENERATE_LOG_FILE)
     # stats_file.write("Wrote correctly processed files to " + file_renamed_images_output_path + '\n')
     # stats_file.close()
 
-    return
+    return merged_df
 
 
 if __name__ == '__main__':
@@ -474,7 +490,7 @@ if __name__ == '__main__':
 
     # For now will only show the name of the file that was chosen
     image_viewer_column = [
-        [sg.Text("Status:"),
+        [sg.Text("Status:", size=(7, 3)),
         sg.Text(size=(50, 3), key="-STATUS-")],
         [sg.Text("Results:")],
         [sg.Table(table_values, headings=['QR Code', 'Processed Image', 'Status', 'Renamed File'], display_row_numbers=True,
@@ -485,9 +501,13 @@ if __name__ == '__main__':
     # ----- Full layout -----
     layout = [
         [
-            sg.Column(file_list_column),
-            sg.VSeperator(),
-            sg.Column(image_viewer_column),
+            # sg.Column(file_list_column),
+            # sg.HorizontalSeparator(),
+            # sg.Column(image_viewer_column),
+
+            file_list_column,
+            sg.HorizontalSeparator(),
+            image_viewer_column
         ]
     ]
 
@@ -510,21 +530,23 @@ if __name__ == '__main__':
         if event == "1. Generate":
             file_qr_labels = values["-INPUTCSV-"]
             # TODO: Remove this override once debugging finished
-            # file_qr_labels = "C:\\Users\\z3099851\\OneDrive - UNSW\\Code\\QR_image_renamer\\csv_input\\test_input.csv"
+            # file_qr_labels = "C:\\Users\\z3099851\\OneDrive - UNSW\\Code\\QR_image_renamer\\csv_input\\trial_records_test.csv"
             file_generated_images_output_path = values["-OUTPUTFOLDER-"]
             # TODO: Remove this override once debugging finished
-            # file_generated_images_output_path = "C:\\Users\\z3099851\\OneDrive - UNSW\\Code\\QR_image_renamer\\generated_codes"
-
+            #file_generated_images_output_path = "C:\\Users\\z3099851\\OneDrive - UNSW\\Code\\QR_image_renamer\\generated_codes"
+            if (not file_qr_labels) or not(file_generated_images_output_path):
+                window["-STATUS-"].update("Select a CSV with QR code contents and a destination for the generated QR code images and try again.")
+                continue
 
             original_qr_df = generate_QR_output_files(file_generated_images_output_path, file_qr_labels)
-            qr_column = original_qr_df[['QR_Data_']]
+            qr_column = original_qr_df[['QR_Data']]
             display_df = qr_column.copy()
             display_df['Images'] = ''
             display_df['Status'] = ''
             display_df['Renamed File'] = ''
 
             # Highlight duplicates in generated QR codes
-            input_qr_duplicates_checked = check_duplicates(original_qr_df.copy(), "QR_Data_")  # Just check for and display duplicated QR codes in input CSV
+            input_qr_duplicates_checked = check_duplicates(original_qr_df.copy(), "QR_Data")  # Just check for and display duplicated QR codes in input CSV
             window["-STATUS-"].update("Generated " + str(len(original_qr_df)) + " QR codes including " +
                                       str(np.count_nonzero(input_qr_duplicates_checked['Duplicated'])) + " duplicates.")
             display_df['Status'] = np.where(input_qr_duplicates_checked['Duplicated'], 'Duplicated QR code. ', 'Ok')  # Indicate duplicated QR_name
@@ -541,15 +563,13 @@ if __name__ == '__main__':
             # file_images_input_path = "C:\\Users\\z3099851\\OneDrive - UNSW\\Code\\QR_image_renamer\\example_images"
             # Check if input directory exists and contains files
             if not os.path.exists(file_images_input_path):
-                print("Warning: Image input directory does not exist: ", file_images_input_path)
                 window["-STATUS-"].update("Image input directory does not exist: " + file_images_input_path)
                 continue
             if not does_file_exist_in_dir(file_images_input_path):
-                print("Warning: No files in input directory: ", file_images_input_path)
                 window["-STATUS-"].update("No files in input directory: " + file_images_input_path)
                 continue
             (processed_images_df, input_image_files_it, num_input_image_files) = process_all_images(file_images_input_path)
-            window["-STATUS-"].update("processed " + str(input_image_files_it) + " out of " + str(num_input_image_files) + " images correctly")
+            window["-STATUS-"].update("Processed " + str(input_image_files_it) + " out of " + str(num_input_image_files) + " images correctly")
             PROCESSED_STATE = True
         if event == "3. Check":
             # Ensure images have been processed first
@@ -557,7 +577,7 @@ if __name__ == '__main__':
                 window["-STATUS-"].update("Process images prior to checking")
                 continue
             print("Checking duplicates in processed images")
-            processed_images_duplicates_checked_df = check_duplicates(processed_images_df, "QR_Data_")
+            processed_images_duplicates_checked_df = check_duplicates(processed_images_df, "QR_Data")
             # Add option to delete duplicate images? Dangerous...should let user choose.
 
             # Select only the first entry of any duplicates
@@ -574,24 +594,23 @@ if __name__ == '__main__':
             (merged_df_all, merged_df_correct) = check_processed_images_against_original_list(original_qr_df, processed_images_duplicates_checked_df)
 
             # Check duplicates for merged list
-            merged_images_duplicates_checked_df = check_duplicates(merged_df_all.copy(), "QR_Data_")
+            merged_images_duplicates_checked_df = check_duplicates(merged_df_all.copy(), "QR_Data")
             merged_df_all['Duplicated'] = np.where(merged_images_duplicates_checked_df['Duplicated'], 'Duplicated QR code. ', '')  # Indicate duplicated QR_name
 
-            merged_df_all.to_csv(os.path.join(file_images_input_path, "merged_log_" +
-                                          dt.now().strftime('%Y-%m-%d_%H.%M.%S') + ".txt"))
             window["-STATUS-"].update("Of " + str(len(original_qr_df)) + " generated QR codes and given " +
                                       str(len(processed_images_df)) + " images, " + str(len(merged_df_correct)) +
                                       " have been correctly matched. " +
                                       str(len(processed_images_df) - len(processed_images_duplicates_removed_df)) +
                                       " duplicated QR codes were processed.")
 
-            display_df = merged_df_all[['QR_Data_', 'Input filename', '_merge', 'Duplicated']].copy()
-            display_df['_merge'] = display_df['_merge'].str.replace('both', 'Matches generated QR code')
-            display_df['_merge'] = display_df['_merge'].str.replace('left_only', 'No image contains this QR code')
-            display_df['_merge'] = display_df['_merge'].str.replace('right_only', 'Image contains unmatched QR code')
+            display_df = merged_df_all[['QR_Data', 'Input filename', '_merge', 'Duplicated']].copy()
+            display_df = display_df.rename(columns={'_merge': 'Status'})
+            display_df['Status'] = display_df['Status'].str.replace('both', 'Matches generated QR code')
+            display_df['Status'] = display_df['Status'].str.replace('left_only', 'No image contains this QR code')
+            display_df['Status'] = display_df['Status'].str.replace('right_only', 'Image contains unmatched QR code')
             display_df = display_df.replace({np.nan: None})
-            display_df['_merge'] = display_df['Duplicated'] + display_df['_merge']
-            display_df = display_df[['QR_Data_', 'Input filename', '_merge']]
+            display_df['Status'] = display_df['Duplicated'] + display_df['Status']
+            display_df = display_df[['QR_Data', 'Input filename', 'Status']]
             window.Finalize
             window["-TABLE-"].update(values=display_df.values.tolist())
             window.Finalize
@@ -602,8 +621,21 @@ if __name__ == '__main__':
                 print("Process and check images prior to renaming")
                 window["-STATUS-"].update("Process and check images prior to renaming")
                 continue
+
+            file_renamed_images_output_path = values["-RENAMEDFOLDER-"]
+
+            if (not file_renamed_images_output_path):
+                window["-STATUS-"].update("Select the location for renamed images to be saved and try again.")
+                continue
+            final_df = rename_images(file_renamed_images_output_path, display_df)
+            window["-TABLE-"].update(values=final_df.values.tolist())
+            window["-STATUS-"].update("Successfully renamed images.")
+            window.Finalize
+
             GENERATE_LOG_FILE = values["-GENERATE_LOG_FILE-"]
-            rename_images(file_renamed_images_output_path, merged_df, GENERATE_LOG_FILE)
+            if GENERATE_LOG_FILE:
+                final_df.to_csv(os.path.join(file_renamed_images_output_path, "merged_log_" +
+                                                  dt.now().strftime('%Y-%m-%d_%H.%M.%S') + ".txt"))
     window.close()
 
     exit(1)  # Exit while debugging
