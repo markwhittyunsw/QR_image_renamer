@@ -358,7 +358,7 @@ def check_parsed_images_against_original_list(original_qr_df, parsed_images_df):
     # original_qr_df['image_exists'] = np.where(original_qr_df.QR_Data_ == parsed_images_df.QR_Data_, 'True', 'False')
     # https: // blog.softhints.com / pandas - compare - columns - in -two - dataframes /
 
-    merged_df = pd.merge(original_qr_df, parsed_images_df, how="inner", on="QR_Data_")
+    merged_df = pd.merge(original_qr_df, parsed_images_df, how="outer", on="QR_Data_", indicator=True)
     # https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html
 
     # Add some logic for displaying the differences.
@@ -476,8 +476,8 @@ if __name__ == '__main__':
         sg.Text(size=(50, 3), key="-STATUS-")],
         [sg.Text("Results:")],
         [sg.Table(table_values, headings=['QR Code', 'Matching Images', 'Renamed File'], display_row_numbers=True,
-                  alternating_row_color='Grey', justification='left', num_rows=20, auto_size_columns=True,
-                  key="-TABLE-")]
+                  alternating_row_color='Grey', justification='left', num_rows=15, auto_size_columns=False,
+                  key="-TABLE-", def_col_width=30, vertical_scroll_only=False, col_widths=[30, 100, 30])]
     ]
 
     # ----- Full layout -----
@@ -507,7 +507,12 @@ if __name__ == '__main__':
         # Folder name was filled in, make a list of files in the folder
         if event == "1. Generate":
             file_qr_labels = values["-INPUTCSV-"]
+            # TODO: Remove this override once debugging finished
+            file_qr_labels = "C:\\Users\\z3099851\\OneDrive - UNSW\\Code\\QR_image_renamer\\csv_input\\test_input.csv"
             file_generated_images_output_path = values["-OUTPUTFOLDER-"]
+            # TODO: Remove this override once debugging finished
+            file_generated_images_output_path = "C:\\Users\\z3099851\\OneDrive - UNSW\\Code\\QR_image_renamer\\generated_codes"
+
 
             original_qr_df = generate_QR_output_files(file_generated_images_output_path, file_qr_labels)
             qr_column = original_qr_df[['QR_Data_']]
@@ -523,10 +528,14 @@ if __name__ == '__main__':
 
             # Display dataframe
             window["-TABLE-"].update(values=display_df.values.tolist())
+            window["-TABLE-"].expand(expand_row=True, expand_x=True)
+
 
             GENERATED_STATE = True
         if event == "2. Parse":
             file_images_input_path = values["-INPUTFOLDER-"]
+            # TODO: Remove this override once debugging finished
+            file_images_input_path = "C:\\Users\\z3099851\\OneDrive - UNSW\\Code\\QR_image_renamer\\example_images"
             # Check if input directory exists and contains files
             if not os.path.exists(file_images_input_path):
                 print("Warning: Image input directory does not exist: ", file_images_input_path)
@@ -561,11 +570,21 @@ if __name__ == '__main__':
             merged_df = check_parsed_images_against_original_list(original_qr_df, parsed_images_duplicates_removed_df)
             merged_df.to_csv(os.path.join(file_images_input_path, "merged_log_" +
                                           dt.now().strftime('%Y-%m-%d_%H.%M.%S') + ".txt"))
+            # TODO: Fix calculation of matching now that outer merge is used
+            # TODO: Add status column
             window["-STATUS-"].update("Of " + str(len(original_qr_df)) + " original QR codes and given " +
                                       str(len(parsed_images_df)) + " images, " + str(len(merged_df)) +
                                       " have been correctly matched. " +
                                       str(len(parsed_images_df) - len(parsed_images_duplicates_removed_df)) +
                                       " duplicated QR codes were parsed.")
+            display_df = merged_df[['QR_Data_', 'Input filename', '_merge']].copy()
+            display_df['_merge'] = display_df['_merge'].str.replace('both', 'Matches generated QR code')
+            display_df['_merge'] = display_df['_merge'].str.replace('left_only', 'No image contains this QR code')
+            display_df['_merge'] = display_df['_merge'].str.replace('right_only', 'Image contains unmatched QR code')
+            # display_df = qr_column.copy()
+            window.Finalize
+            window["-TABLE-"].update(values=display_df.values.tolist())
+            window.Finalize
             CHECKED_STATE = True
         if event == "4. Rename":
             # Ensure images have been parsed and checked first
