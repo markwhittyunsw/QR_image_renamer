@@ -468,12 +468,15 @@ if __name__ == '__main__':
         ],
     ]
 
+    table_values = [['' for col in range(3)] for row in range(20)]  # Set a default size for the empty table
+
     # For now will only show the name of the file that was chosen
     image_viewer_column = [
         [sg.Text("Status:"),
         sg.Text(size=(50, 3), key="-STATUS-")],
         [sg.Text("Results:")],
-        [sg.Text(size=(50, 20), key="-RESULT_LIST-")],
+        [sg.Table(table_values, headings=['QR Code', 'Matching Images', 'Renamed File'], display_row_numbers=True,
+                  alternating_row_color='Grey', justification='left', num_rows=20, auto_size_columns=True)]
     ]
 
     # ----- Full layout -----
@@ -491,6 +494,7 @@ if __name__ == '__main__':
     file_generated_images_output_path = []
     file_images_input_path = []
     file_renamed_images_output_path = []
+    display_df = []  # Dataframe to be displayed to the user, dynamically updated
     GENERATED_STATE = False
     PARSED_STATE = False
     CHECKED_STATE = False
@@ -505,12 +509,17 @@ if __name__ == '__main__':
             file_generated_images_output_path = values["-OUTPUTFOLDER-"]
 
             original_qr_df = generate_QR_output_files(file_generated_images_output_path, file_qr_labels)
+            display_df = original_qr_df
 
             # TODO: Remove duplicates in generated QR codes
             # print("Checking duplicate QR codes from provided CSV")
             # check_duplicates(original_qr_df, "QR_Data_")  # Just check for and display duplicated QR codes in input CSV
 
             window["-STATUS-"].update("Generated " + str(len(original_qr_df)) + " QR codes")
+
+            # TODO Display dataframe
+            print(tabulate(qr_dataframe, headers='keys', tablefmt='psql'))
+
             GENERATED_STATE = True
         if event == "2. Parse":
             file_images_input_path = values["-INPUTFOLDER-"]
