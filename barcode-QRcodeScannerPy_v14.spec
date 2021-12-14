@@ -1,12 +1,13 @@
 # -*- mode: python ; coding: utf-8 -*-
 from pathlib import Path
-from pyzbar import pyzbar   # dylibs not detected because they are loaded by ctypes
+from pyzbar import pyzbar
+# dylibs not detected because they are loaded by ctypes
 
 
 block_cipher = None
 
 
-a = Analysis(['barcode-QRcodeScannerPy_v14.py'],
+a = Analysis(['barcode-QRcodeScannerPy_v14.py', 'barcode-QRcodeScannerPy_v14.spec'],
              pathex=['C:\\Users\\z3099851\\OneDrive - UNSW\\Code\\QR_image_renamer'],
              binaries=[],
              datas=[],
@@ -18,9 +19,7 @@ a = Analysis(['barcode-QRcodeScannerPy_v14.py'],
              win_private_assemblies=False,
              cipher=block_cipher,
              noarchive=False)
-
 a.binaries += TOC([ (Path(dep._name).name, dep._name, 'BINARY') for dep in pyzbar.EXTERNAL_DEPENDENCIES ])
-
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
